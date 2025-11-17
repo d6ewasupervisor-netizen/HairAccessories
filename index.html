@@ -21,10 +21,35 @@
             margin-bottom: 15px;
         }
 
+        .controls {
+            margin: 15px 0;
+        }
+
+        button {
+            padding: 8px 14px;
+            border-radius: 4px;
+            border: 1px solid #444;
+            background: #333;
+            color: #fff;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        button:hover {
+            opacity: 0.9;
+        }
+
+        .table-wrapper {
+            max-height: 80vh;
+            overflow: auto;
+            box-shadow: 0 0 4px rgba(0,0,0,0.1);
+            border-radius: 4px;
+            background: #fff;
+        }
+
         table {
             border-collapse: collapse;
             width: 100%;
-            background: #fff;
         }
 
         th, td {
@@ -45,17 +70,21 @@
             background: #fafafa;
         }
 
-        .table-wrapper {
-            max-height: 80vh;
-            overflow: auto;
-            box-shadow: 0 0 4px rgba(0,0,0,0.1);
-            border-radius: 4px;
+        input.image-url-input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 4px;
+            font-size: 0.8rem;
         }
     </style>
 </head>
 <body>
     <h1>Hair Accessories Products</h1>
     <div id="status">Loading CSV…</div>
+
+    <div class="controls">
+        <button id="send-links-btn" type="button">Send Image Links</button>
+    </div>
 
     <div class="table-wrapper">
         <table id="csv-table"></table>
@@ -67,45 +96,107 @@
     <script>
         const statusEl = document.getElementById("status");
         const tableEl = document.getElementById("csv-table");
+        const sendBtn = document.getElementById("send-links-btn");
+
+        let parsedData = [];
+        let imageInputs = [];
 
         Papa.parse("hair accessories products.csv", {
             download: true,
             header: true,
             skipEmptyLines: true,
             complete: function (results) {
-                const data = results.data || [];
+                parsedData = results.data || [];
 
-                if (!data.length) {
+                if (!parsedData.length) {
                     statusEl.textContent = "CSV loaded, but no rows were found.";
                     return;
                 }
 
-                statusEl.textContent = `Loaded ${data.length} rows.`;
+                statusEl.textContent = `Loaded ${parsedData.length} rows.`;
 
-                const headers = Object.keys(data[0]);
-                const theadRow = document.createElement("tr");
+                const headers = Object.keys(parsedData[0]);
+                const headerRow = document.createElement("tr");
 
+                // Existing CSV headers
                 headers.forEach(h => {
                     const th = document.createElement("th");
                     th.textContent = h;
-                    theadRow.appendChild(th);
+                    headerRow.appendChild(th);
                 });
-                tableEl.appendChild(theadRow);
 
-                data.forEach(row => {
+                // New editable column header
+                const thImage = document.createElement("th");
+                thImage.textContent = "Image URL";
+                headerRow.appendChild(thImage);
+
+                tableEl.appendChild(headerRow);
+
+                // Data rows
+                parsedData.forEach((row, rowIndex) => {
                     const tr = document.createElement("tr");
+
                     headers.forEach(h => {
                         const td = document.createElement("td");
                         td.textContent = row[h] ?? "";
                         tr.appendChild(td);
                     });
+
+                    // Image URL cell with input
+                    const tdImage = document.createElement("td");
+                    const input = document.createElement("input");
+                    input.type = "text";
+                    input.className = "image-url-input";
+                    input.placeholder = "https://…";
+                    tdImage.appendChild(input);
+                    tr.appendChild(tdImage);
+
                     tableEl.appendChild(tr);
+
+                    imageInputs[rowIndex] = input;
                 });
             },
             error: function (err) {
                 console.error(err);
                 statusEl.textContent = "Error loading CSV. Check file name/path.";
             }
+        });
+
+        sendBtn.addEventListener("click", function () {
+            if (!parsedData.length) {
+                alert("No data loaded yet.");
+                return;
+            }
+
+            const lines = [];
+            lines.push("Image URL entries for Hair Accessories Products:");
+            lines.push("");
+
+            const headers = parsedData.length ? Object.keys(parsedData[0]) : [];
+
+            parsedData.forEach((row, index) => {
+                const imgUrl = (imageInputs[index] && imageInputs[index].value.trim()) || "";
+                if (!imgUrl) return;
+
+                lines.push(`Row ${index + 1}:`);
+                headers.forEach(h => {
+                    const val = row[h] ?? "";
+                    lines.push(`  ${h}: ${val}`);
+                });
+                lines.push(`  Image URL: ${imgUrl}`);
+                lines.push("");
+            });
+
+            const filledLines = lines.filter(line => line.trim() !== "");
+            if (filledLines.length === 2) { // only header + blank
+                alert("No image URLs entered yet.");
+                return;
+            }
+
+            const subject = encodeURIComponent("Image URLs for Hair Accessories Products");
+            const body = encodeURIComponent(filledLines.join("\n"));
+
+            window.location.href = `mailto:tyson.gauthier@retailodyssey.com?subject=${subject}&body=${body}`;
         });
     </script>
 </body>
