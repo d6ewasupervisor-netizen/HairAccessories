@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>Hair Accessories Products CSV</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+        body {
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            margin: 20px;
+            background: #f7f7f7;
+        }
+
+        h1 {
+            margin-bottom: 10px;
+        }
+
+        #status {
+            font-size: 0.9rem;
+            color: #555;
+            margin-bottom: 15px;
+        }
+
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            background: #fff;
+        }
+
+        th, td {
+            border: 1px solid #ddd;
+            padding: 6px 8px;
+            font-size: 0.85rem;
+        }
+
+        th {
+            background: #f0f0f0;
+            font-weight: 600;
+            position: sticky;
+            top: 0;
+            z-index: 1;
+        }
+
+        tr:nth-child(even) td {
+            background: #fafafa;
+        }
+
+        .table-wrapper {
+            max-height: 80vh;
+            overflow: auto;
+            box-shadow: 0 0 4px rgba(0,0,0,0.1);
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Hair Accessories Products</h1>
+    <div id="status">Loading CSV…</div>
+
+    <div class="table-wrapper">
+        <table id="csv-table"></table>
+    </div>
+
+    <!-- PapaParse CSV library -->
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+
+    <script>
+        const statusEl = document.getElementById("status");
+        const tableEl = document.getElementById("csv-table");
+
+        Papa.parse("hair accessories products.csv", {
+            download: true,
+            header: true,
+            skipEmptyLines: true,
+            complete: function (results) {
+                const data = results.data || [];
+
+                if (!data.length) {
+                    statusEl.textContent = "CSV loaded, but no rows were found.";
+                    return;
+                }
+
+                statusEl.textContent = `Loaded ${data.length} rows.`;
+
+                const headers = Object.keys(data[0]);
+                const theadRow = document.createElement("tr");
+
+                headers.forEach(h => {
+                    const th = document.createElement("th");
+                    th.textContent = h;
+                    theadRow.appendChild(th);
+                });
+                tableEl.appendChild(theadRow);
+
+                data.forEach(row => {
+                    const tr = document.createElement("tr");
+                    headers.forEach(h => {
+                        const td = document.createElement("td");
+                        td.textContent = row[h] ?? "";
+                        tr.appendChild(td);
+                    });
+                    tableEl.appendChild(tr);
+                });
+            },
+            error: function (err) {
+                console.error(err);
+                statusEl.textContent = "Error loading CSV. Check file name/path.";
+            }
+        });
+    </script>
+</body>
+</html>
