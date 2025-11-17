@@ -1,81 +1,25 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8" />
+    <meta charset="UTF-8">
     <title>Hair Accessories Products CSV</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
     <style>
-        body {
-            font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-            margin: 20px;
-            background: #f7f7f7;
-        }
-
-        h1 {
-            margin-bottom: 10px;
-        }
-
-        #status {
-            font-size: 0.9rem;
-            color: #555;
-            margin-bottom: 15px;
-        }
-
-        .controls {
-            margin: 15px 0;
-        }
-
-        button {
-            padding: 8px 14px;
-            border-radius: 4px;
-            border: 1px solid #444;
-            background: #333;
-            color: #fff;
-            cursor: pointer;
-            font-size: 0.9rem;
-        }
-
-        button:hover {
-            opacity: 0.9;
-        }
-
-        .table-wrapper {
-            max-height: 80vh;
-            overflow: auto;
-            box-shadow: 0 0 4px rgba(0,0,0,0.1);
-            border-radius: 4px;
-            background: #fff;
-        }
-
-        table {
-            border-collapse: collapse;
-            width: 100%;
-        }
-
-        th, td {
-            border: 1px solid #ddd;
-            padding: 6px 8px;
-            font-size: 0.85rem;
-        }
-
-        th {
-            background: #f0f0f0;
-            font-weight: 600;
-            position: sticky;
-            top: 0;
-            z-index: 1;
-        }
-
-        tr:nth-child(even) td {
-            background: #fafafa;
-        }
-
-        input.image-url-input {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 4px;
-            font-size: 0.8rem;
-        }
+        /* Simple styling for the page and table */
+        body { font-family: system-ui, sans-serif; margin: 20px; background:#f7f7f7; }
+        h1 { margin-bottom: 10px; }
+        #status { font-size: 0.9rem; color:#555; margin-bottom:15px; }
+        .controls { margin:15px 0; }
+        button { padding:8px 14px; border-radius:4px; border:1px solid #444; background:#333;
+                 color:#fff; cursor:pointer; font-size:0.9rem; margin-right:8px; }
+        button:hover { opacity:0.9; }
+        .table-wrapper { max-height:80vh; overflow:auto; box-shadow:0 0 4px rgba(0,0,0,0.1);
+                         border-radius:4px; background:#fff; }
+        table { border-collapse: collapse; width:100%; }
+        th, td { border:1px solid #ddd; padding:6px 8px; font-size:0.85rem; }
+        th { background:#f0f0f0; font-weight:600; position:sticky; top:0; z-index:1; }
+        tr:nth-child(even) td { background:#fafafa; }
+        input.image-url-input { width:100%; box-sizing:border-box; padding:4px; font-size:0.8rem; }
     </style>
 </head>
 <body>
@@ -83,66 +27,69 @@
     <div id="status">Loading CSV…</div>
 
     <div class="controls">
+        <!-- Legacy email option -->
         <button id="send-links-btn" type="button">Send Image Links</button>
+        <!-- New button to push updates to GitHub -->
+        <button id="update-github-btn" type="button">Update CSV on GitHub</button>
     </div>
 
     <div class="table-wrapper">
         <table id="csv-table"></table>
     </div>
 
-    <!-- PapaParse CSV library -->
+    <!-- PapaParse library -->
     <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-
     <script>
-        const statusEl = document.getElementById("status");
-        const tableEl = document.getElementById("csv-table");
-        const sendBtn = document.getElementById("send-links-btn");
-
-        let parsedData = [];
+        // Elements and state
+        const statusEl  = document.getElementById("status");
+        const tableEl   = document.getElementById("csv-table");
+        const sendBtn   = document.getElementById("send-links-btn");
+        const updateBtn = document.getElementById("update-github-btn");
+        let parsedData  = [];
         let imageInputs = [];
 
-        Papa.parse("hair accessories products.csv", {
+        // CSV file served by GitHub Pages (same repo)
+        const csvPath = "hair accessories products.csv";
+
+        // GitHub API details (update these values!)
+        const GITHUB_OWNER    = "d6ewasupervisor-netizen";
+        const GITHUB_REPO     = "HairAccessories";
+        const GITHUB_FILE_PATH = "hair accessories products.csv";
+        const GITHUB_BRANCH   = "main";
+        const GITHUB_TOKEN    = "YOUR_PERSONAL_ACCESS_TOKEN";
+
+        // Load and parse the CSV
+        Papa.parse(csvPath, {
             download: true,
             header: true,
             skipEmptyLines: true,
-            complete: function (results) {
+            complete: function(results) {
                 parsedData = results.data || [];
-
                 if (!parsedData.length) {
                     statusEl.textContent = "CSV loaded, but no rows were found.";
                     return;
                 }
-
                 statusEl.textContent = `Loaded ${parsedData.length} rows.`;
-
                 const headers = Object.keys(parsedData[0]);
                 const headerRow = document.createElement("tr");
-
-                // Existing CSV headers
                 headers.forEach(h => {
                     const th = document.createElement("th");
                     th.textContent = h;
                     headerRow.appendChild(th);
                 });
-
-                // New editable column header
+                // Add an Image URL column
                 const thImage = document.createElement("th");
                 thImage.textContent = "Image URL";
                 headerRow.appendChild(thImage);
-
                 tableEl.appendChild(headerRow);
-
-                // Data rows
+                // Render each row
                 parsedData.forEach((row, rowIndex) => {
                     const tr = document.createElement("tr");
-
                     headers.forEach(h => {
                         const td = document.createElement("td");
                         td.textContent = row[h] ?? "";
                         tr.appendChild(td);
                     });
-
-                    // Image URL cell with input
                     const tdImage = document.createElement("td");
                     const input = document.createElement("input");
                     input.type = "text";
@@ -150,34 +97,29 @@
                     input.placeholder = "https://…";
                     tdImage.appendChild(input);
                     tr.appendChild(tdImage);
-
                     tableEl.appendChild(tr);
-
                     imageInputs[rowIndex] = input;
                 });
             },
-            error: function (err) {
+            error: function(err) {
                 console.error(err);
                 statusEl.textContent = "Error loading CSV. Check file name/path.";
             }
         });
 
-        sendBtn.addEventListener("click", function () {
+        // Legacy: build an email of all entered URLs
+        sendBtn.addEventListener("click", function() {
             if (!parsedData.length) {
                 alert("No data loaded yet.");
                 return;
             }
-
             const lines = [];
             lines.push("Image URL entries for Hair Accessories Products:");
             lines.push("");
-
             const headers = parsedData.length ? Object.keys(parsedData[0]) : [];
-
             parsedData.forEach((row, index) => {
                 const imgUrl = (imageInputs[index] && imageInputs[index].value.trim()) || "";
                 if (!imgUrl) return;
-
                 lines.push(`Row ${index + 1}:`);
                 headers.forEach(h => {
                     const val = row[h] ?? "";
@@ -186,18 +128,80 @@
                 lines.push(`  Image URL: ${imgUrl}`);
                 lines.push("");
             });
-
             const filledLines = lines.filter(line => line.trim() !== "");
-            if (filledLines.length === 2) { // only header + blank
+            if (filledLines.length === 2) {
                 alert("No image URLs entered yet.");
                 return;
             }
-
             const subject = encodeURIComponent("Image URLs for Hair Accessories Products");
-            const body = encodeURIComponent(filledLines.join("\n"));
-
+            const body    = encodeURIComponent(filledLines.join("\n"));
             window.location.href = `mailto:tyson.gauthier@retailodyssey.com?subject=${subject}&body=${body}`;
         });
+
+        // Helper: base64-encode Unicode strings (required by GitHub API)
+        function toBase64Unicode(str) {
+            return btoa(unescape(encodeURIComponent(str)));
+        }
+
+        // Update the CSV file on GitHub via REST API
+        async function updateCsvOnGitHub() {
+            if (!parsedData.length) {
+                alert("No data loaded yet.");
+                return;
+            }
+            if (!GITHUB_TOKEN || GITHUB_TOKEN === "YOUR_PERSONAL_ACCESS_TOKEN") {
+                alert("Please set a valid GitHub personal access token in the script.");
+                return;
+            }
+            // Build updated rows with the new Image URL column
+            const updatedData = parsedData.map((row, idx) => {
+                const copy = { ...row };
+                copy["Image URL"] = imageInputs[idx] ? imageInputs[idx].value.trim() : "";
+                return copy;
+            });
+            const csvString = Papa.unparse(updatedData);
+            try {
+                // Fetch current file to get its SHA:contentReference[oaicite:1]{index=1}.
+                const getRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodeURIComponent(GITHUB_FILE_PATH)}?ref=${GITHUB_BRANCH}`, {
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    }
+                });
+                if (!getRes.ok) {
+                    throw new Error(`Failed to retrieve file metadata: ${getRes.status} ${getRes.statusText}`);
+                }
+                const fileData = await getRes.json();
+                const fileSha  = fileData.sha;
+                const base64Content = toBase64Unicode(csvString);
+                const payload = {
+                    message: 'Update image URLs via web form',
+                    content: base64Content,
+                    sha: fileSha,
+                    branch: GITHUB_BRANCH
+                };
+                // Send PUT request to update the file:contentReference[oaicite:2]{index=2}.
+                const putRes = await fetch(`https://api.github.com/repos/${GITHUB_OWNER}/${GITHUB_REPO}/contents/${encodeURIComponent(GITHUB_FILE_PATH)}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Authorization': `token ${GITHUB_TOKEN}`,
+                        'Accept': 'application/vnd.github.v3+json'
+                    },
+                    body: JSON.stringify(payload)
+                });
+                if (!putRes.ok) {
+                    const errData = await putRes.json();
+                    throw new Error(errData.message || 'Unknown error updating file');
+                }
+                alert('CSV updated successfully on GitHub!');
+            } catch (err) {
+                console.error(err);
+                alert('Error updating CSV: ' + err.message);
+            }
+        }
+
+        // Bind the update function to the button
+        updateBtn.addEventListener('click', updateCsvOnGitHub);
     </script>
 </body>
 </html>
